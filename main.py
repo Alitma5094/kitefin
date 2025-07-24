@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 import sys
 from lex import Lexer
+from parse import Parser
 
 def main():
     parser = argparse.ArgumentParser()
@@ -24,21 +25,22 @@ def main():
     with preprocessed_file.open() as f:
         lexer = Lexer(f.read())
         tokens = lexer.lex()
-        print(tokens)
+        # print(tokens)
 
     preprocessed_file.unlink()
 
     if args.lex:
         sys.exit()
 
-    # tree = parse(tokens)
+    parser = Parser(tokens)
+    tree = parser.parse()
 
-    # if args.parse():
-    #     sys.exit()
+    if args.parse:
+        sys.exit()
 
     # tree = codegen(tree)
 
-    # if args.codegen():
+    # if args.codegen:
     #     sys.exit()
 
     # assembly_file = input_file.with_suffix(".s")

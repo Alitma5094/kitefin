@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 class TokenType(Enum):
     # Constants
-    IDENTIFIER = None
-    CONSTANT = None
+    IDENTIFIER = 0
+    CONSTANT = 1
     # Keywords
     KW_INT = "int"
     KW_VOID = "void"
@@ -19,7 +19,7 @@ class TokenType(Enum):
 @dataclass
 class Token:
     token_type: TokenType
-    value: any
+    value: str
 
 
 class Lexer:
@@ -29,9 +29,12 @@ class Lexer:
         self.start = 0
         self.end = len(input)
         self.current = 0
+    
+    def is_at_end(self) -> bool:
+        return self.current >= self.end
 
     def lex(self):
-        while self.current != self.end:
+        while not self.is_at_end():
             self.start = self.current
             self.scanToken()
         
@@ -49,10 +52,10 @@ class Lexer:
         while str.isdecimal(self.peek()):
             self.advance()
 
-        if self.current < self.end and str.isalpha(self.peek()):
+        if not self.is_at_end() and str.isalpha(self.peek()):
             raise RuntimeError("Invalid number")
         
-        self.tokens.append(Token(TokenType.CONSTANT, int(self.input[self.start:self.current])))
+        self.tokens.append(Token(TokenType.CONSTANT, self.input[self.start:self.current]))
 
     def identifier(self):
         while str.isalnum(self.peek()):
@@ -68,7 +71,7 @@ class Lexer:
             case "return":
                 self.tokens.append(Token(TokenType.KW_RETURN, None))
             case _:
-                self.tokens.append(Token(TokenType.CONSTANT, text))
+                self.tokens.append(Token(TokenType.IDENTIFIER, text))
     
     def scanToken(self):
         c = self.advance()
