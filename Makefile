@@ -1,4 +1,4 @@
-CC = main.py
+CC = src/main.py
 TEST_RUNNER = tests/test_compiler --verbose --keep-asm-on-failure
 CHAPTER ?= 1
 
