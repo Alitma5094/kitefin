@@ -42,7 +42,7 @@ class Parser:
         program = self.parseProgram()
         if not self.is_at_end():
             raise RuntimeError("tokens outside of function")
-        return 
+        return program
 
     def parseProgram(self) -> Program:
         function = self.parseFunction()

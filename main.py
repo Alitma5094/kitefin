@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 from lex import Lexer
 from parse import Parser
+from asm import ASMGenerator, ASMEmitter
 
 def main():
     parser = argparse.ArgumentParser()
@@ -14,6 +15,7 @@ def main():
     parser.add_argument("--lex", action="store_true", help="run the lexer, but stop before parsing")
     parser.add_argument("--parse", action="store_true", help="run the lexer and parser, but stop before assembly generation")
     parser.add_argument("--codegen", action="store_true", help="perform lexing, parsing, and assembly generation, but stop before assembly generation")
+    parser.add_argument("-S", action="store_true")
 
     args = parser.parse_args()
 
@@ -38,17 +40,22 @@ def main():
     if args.parse:
         sys.exit()
 
-    # tree = codegen(tree)
+    generator = ASMGenerator(tree)
+    asmTree = generator.generate()
 
-    # if args.codegen:
-    #     sys.exit()
+    if args.codegen:
+        sys.exit()
 
-    # assembly_file = input_file.with_suffix(".s")
+    emitter = ASMEmitter(asmTree)
+    assembly_file = input_file.with_suffix(".s")
 
-    # with assembly_file.open() as f:
-    #     f.write(emit(tree))
+    with assembly_file.open(mode="w") as f:
+        f.write(emitter.emit())
+    
+    if args.S:
+        sys.exit()
 
-    # subprocess.run(["cc", str(assembly_file), "-o", str(input_file.with_suffix(""))])
+    subprocess.run(["cc", str(assembly_file), "-o", str(input_file.with_suffix(""))], check=True)
     # assembly_file.unlink()
 if __name__ == "__main__":
     main()
