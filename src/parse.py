@@ -1,4 +1,6 @@
+from abc import ABC
 from dataclasses import dataclass
+from enum import Enum
 from lex import Token, TokenType
 
 
@@ -15,6 +17,30 @@ class Visitor:
     def visit_constant(self, node):
         pass
 
+    def visit_unary(self, node):
+        pass
+
+
+class UnaryOp(Enum):
+    NEGATE = 0
+    COMPLEMENT = 1
+
+    def from_token(token: Token) -> "UnaryOp":
+        match token.token_type:
+            case TokenType.TILDE:
+                return UnaryOp.COMPLEMENT
+            case TokenType.HYPHEN:
+                return UnaryOp.NEGATE
+            case _:
+                raise RuntimeError(
+                    f"unexpected token type: wanted 'TILDE | HYPHEN', got {token.token_type}"
+                )
+
+
+_bases, _dict = (ABC,), {}
+Statement = type("Statement", _bases, _dict)
+Expression = type("Expression", _bases, _dict)
+
 
 class Node:
     def accept(self, visitor):
@@ -22,7 +48,7 @@ class Node:
 
 
 @dataclass
-class Constant(Node):
+class Constant(Node, Expression):
     val: int
 
     def accept(self, visitor):
@@ -30,8 +56,17 @@ class Constant(Node):
 
 
 @dataclass
-class Return(Node):
-    exp: Constant
+class Unary(Node, Expression):
+    unary_operator: UnaryOp
+    exp: Expression
+
+    def accept(self, visitor):
+        return visitor.visit_unary(self)
+
+
+@dataclass
+class Return(Node, Statement):
+    exp: Expression
 
     def accept(self, visitor):
         return visitor.visit_return(self)
@@ -40,7 +75,7 @@ class Return(Node):
 @dataclass
 class Function(Node):
     name: str
-    body: Return
+    body: Statement
 
     def accept(self, visitor):
         return visitor.visit_function(self)
@@ -74,6 +109,14 @@ class Parser:
 
         return next_token
 
+    def peek(self) -> Token:
+        return self.tokens[self.index]
+
+    def consume(self) -> Token:
+        next_token = self.tokens[self.index]
+        self.index += 1
+        return next_token
+
     def parse(self) -> Program:
         program = self.parse_program()
         if not self.is_at_end():
@@ -95,15 +138,30 @@ class Parser:
         self.expect(TokenType.CLOSE_BRACE)
         return Function(name=identifier, body=statement)
 
-    def parse_statement(self) -> Return:
+    def parse_statement(self) -> Statement:
         self.expect(TokenType.KW_RETURN)
         return_val = self.parse_expression()
         self.expect(TokenType.SEMICOLON)
         return Return(exp=return_val)
 
-    def parse_expression(self) -> Constant:
-        val = self.parse_int()
-        return Constant(val=val)
+    def parse_expression(self) -> Expression:
+        next_token = self.peek()
+        match next_token.token_type:
+            case TokenType.CONSTANT:
+                val = self.parse_int()
+                return Constant(val=val)
+            case TokenType.TILDE | TokenType.HYPHEN:
+                self.consume()
+                operator = UnaryOp.from_token(next_token)
+                inner_exp = self.parse_expression()
+                return Unary(unary_operator=operator, exp=inner_exp)
+            case TokenType.OPEN_PAREN:
+                self.expect(TokenType.OPEN_PAREN)
+                inner_exp = self.parse_expression()
+                self.expect(TokenType.CLOSE_PAREN)
+                return inner_exp
+            case _:
+                raise RuntimeError("Malformed expression")
 
     def parse_identifier(self) -> str:
         token = self.expect(TokenType.IDENTIFIER)

@@ -16,6 +16,9 @@ class TokenType(Enum):
     OPEN_BRACE = "{"
     CLOSE_BRACE = "}"
     SEMICOLON = ";"
+    TILDE = "~"
+    HYPHEN = "-"
+    DOUBLE_HYPHEN = "--"
 
 
 @dataclass
@@ -90,6 +93,13 @@ class Lexer:
                 self.tokens.append(Token(TokenType.CLOSE_BRACE, None))
             case ";":
                 self.tokens.append(Token(TokenType.SEMICOLON, None))
+            case "~":
+                self.tokens.append(Token(TokenType.TILDE, None))
+            case "-":
+                if self.peek() == "-":
+                    self.tokens.append(Token(TokenType.DOUBLE_HYPHEN, None))
+                else:
+                    self.tokens.append(Token(TokenType.HYPHEN, None))
             case " " | "\t" | "\r" | "\n":
                 # Ignore whitespace
                 pass

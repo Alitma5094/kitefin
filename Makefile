@@ -1,6 +1,6 @@
 CC = src/main.py
 TEST_RUNNER = tests/test_compiler --verbose --keep-asm-on-failure
-CHAPTER ?= 1
+CHAPTER ?= 2
 
 run:
 	arch -x86_64 $(TEST_RUNNER) --chapter $(CHAPTER) --stage run $(CC)
